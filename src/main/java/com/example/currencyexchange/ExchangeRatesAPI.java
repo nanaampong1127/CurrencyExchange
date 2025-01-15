@@ -1,33 +1,36 @@
 package com.example.currencyexchange;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
+
 import java.util.ArrayList;
+import java.util.HashMap;
+
 
 public class ExchangeRatesAPI {
     //Set URL
     private static final String API_URL = "https://v6.exchangerate-api.com/v6/98d1456c7657c057582eaa85";
 
     public static void main(String[] args) throws Exception {
-        ArrayList<String> curr = getCurrencyCodes();
+        HashMap<String, String> curr = getCurrencyCodes();
         System.out.println(curr);
 
         System.out.println(getConvertedAmount(1, "USD", "HUF"));
     }
 
-    public static ArrayList<String> getCurrencyCodes() throws Exception {
+    public static HashMap<String, String> getCurrencyCodes() throws Exception {
         try {
-            ArrayList<String> currencyCodes = new ArrayList<String>();
+            HashMap<String, String> currencyCodes = new HashMap<String, String>();
 
-            String urlStr = API_URL + "/latest/USD";
+            String urlStr = API_URL + "/codes";
             URL url = new URL(urlStr);
 
 
@@ -48,12 +51,15 @@ public class ExchangeRatesAPI {
             //Convert json structure into json object
             JsonObject jsonObject = root.getAsJsonObject();
 
-            JsonObject conversionRates = jsonObject.getAsJsonObject("conversion_rates");
-            System.out.println(jsonObject.getAsJsonObject("conversion_rates").size());
+            JsonArray conversionRates = jsonObject.getAsJsonArray("supported_codes");
 
-            for(String key : conversionRates.keySet()){
-                currencyCodes.add(key);
+            for(int i = 0; i < conversionRates.size(); i++){
+                JsonArray supportedCodes = conversionRates.get(i).getAsJsonArray();
+
+                currencyCodes.put(supportedCodes.get(0).getAsString(), supportedCodes.get(1).getAsString());
             }
+            System.out.println(conversionRates.size());
+
 
             return currencyCodes;
         } catch (Exception e) {
@@ -88,8 +94,10 @@ public class ExchangeRatesAPI {
             JsonObject jsonObject = root.getAsJsonObject();
 
 
-            double result = jsonObject.get("conversion_result").getAsDouble();
 
+            String real = String.format("%.2f", jsonObject.get("conversion_result").getAsDouble());
+
+            double result = Double.parseDouble(real);
 
             return result;
 
